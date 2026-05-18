@@ -138,3 +138,63 @@
     background: #334155;
   }
 }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1  { animation-delay: 40ms; }
+.stagger-2  { animation-delay: 80ms; }
+.stagger-3  { animation-delay: 120ms; }
+.stagger-4  { animation-delay: 160ms; }
+.stagger-5  { animation-delay: 200ms; }
+.stagger-6  { animation-delay: 240ms; }
+.stagger-7  { animation-delay: 280ms; }
+.stagger-8  { animation-delay: 320ms; }
+.stagger-9  { animation-delay: 360ms; }
+.stagger-10 { animation-delay: 400ms; }
+.stagger-11 { animation-delay: 440ms; }
+.stagger-12 { animation-delay: 480ms; }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

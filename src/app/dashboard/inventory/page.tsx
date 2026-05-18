@@ -1,10 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, TrendingDown, Package, Loader2 } from 'lucide-react';
+import { AlertCircle, TrendingDown, Package, Loader2, Plus } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -16,7 +27,11 @@ import {
 import { Progress } from '@/components/ui/progress';
 
 export default function InventoryPage() {
-  const { products, loading } = useData();
+  const { products, loading, updateProduct } = useData();
+  const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantityToAdd, setQuantityToAdd] = useState(0);
+  const [savingStock, setSavingStock] = useState(false);
 
   if (loading) {
     return (
@@ -45,9 +60,22 @@ export default function InventoryPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Inventory Management</h1>
-        <p className="text-slate-600 mt-2">Track and monitor your stock levels</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Inventory Management</h1>
+          <p className="text-slate-600 mt-2">Track and monitor your stock levels</p>
+        </div>
+        <Button
+          onClick={() => {
+            setSelectedProductId(products[0]?.id || '');
+            setQuantityToAdd(0);
+            setStockDialogOpen(true);
+          }}
+          className="gap-2 bg-amber-500 hover:bg-amber-600"
+        >
+          <Plus className="h-4 w-4" />
+          Add Stock
+        </Button>
       </div>
 
       {/* KPI Cards */}
@@ -179,6 +207,65 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Inventory Stock</DialogTitle>
+            <DialogDescription>Add newly received units to an existing product.</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const product = products.find((item) => item.id === selectedProductId);
+              if (!product || quantityToAdd <= 0) return;
+              setSavingStock(true);
+              try {
+                const success = await updateProduct(product.id, {
+                  stock: product.stock + quantityToAdd,
+                });
+                if (success) setStockDialogOpen(false);
+              } finally {
+                setSavingStock(false);
+              }
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="stock-product">Product</Label>
+              <select
+                id="stock-product"
+                value={selectedProductId}
+                onChange={(event) => setSelectedProductId(event.target.value)}
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+              >
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name} ({product.stock} current)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stock-quantity">Quantity to add</Label>
+              <Input
+                id="stock-quantity"
+                type="number"
+                min={1}
+                value={quantityToAdd || ''}
+                onChange={(event) => setQuantityToAdd(Number(event.target.value))}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-amber-500 hover:bg-amber-600"
+              disabled={!selectedProductId || quantityToAdd <= 0 || savingStock}
+            >
+              {savingStock ? 'Adding...' : 'Add Stock'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

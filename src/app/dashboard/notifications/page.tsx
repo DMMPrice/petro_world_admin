@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Send, Users, User, Search, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { Bell, Send, Users, User, Search, Trash2, Clock, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +44,11 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     try {
       const data = await api.get('/admin/notifications');
-      setNotifications(data || []);
+      setNotifications((data || []).map((notification: any) => ({
+        ...notification,
+        message: notification.body,
+        type: notification.user_id ? 'individual' : 'global',
+      })));
     } catch {
       // Notifications endpoint may not be available yet
       setNotifications([]);
@@ -66,8 +70,7 @@ export default function NotificationsPage() {
     try {
       await api.post('/admin/notifications', {
         title,
-        message,
-        type,
+        body: message,
         user_id: type === 'individual' ? selectedUser : null,
       });
       toast.success('Notification sent successfully');

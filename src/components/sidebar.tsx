@@ -16,6 +16,8 @@ import {
   HelpCircle,
   MessageSquare,
   Bell,
+  FolderOpen,
+  MapPin,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +36,11 @@ const navigationItems = [
     icon: Package,
   },
   {
+    title: 'Categories',
+    href: '/dashboard/categories',
+    icon: FolderOpen,
+  },
+  {
     title: 'Orders',
     href: '/dashboard/orders',
     icon: ShoppingCart,
@@ -47,6 +54,11 @@ const navigationItems = [
     title: 'Customers',
     href: '/dashboard/customers',
     icon: Users,
+  },
+  {
+    title: 'Addresses',
+    href: '/dashboard/addresses',
+    icon: MapPin,
   },
   {
     title: 'Promotions',

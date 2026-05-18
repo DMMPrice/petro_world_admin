@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, Loader2, Image as ImageIcon, ExternalLink, Edit2 } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, Loader2, Image as ImageIcon, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -166,12 +166,6 @@ export default function PromotionsPage() {
                 <h3 className="font-bold text-slate-900 truncate">
                   {banner.title || 'Untitled Banner'}
                 </h3>
-                {banner.linkTo && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
-                    <ExternalLink className="w-3 h-3" />
-                    <span className="truncate">{banner.linkTo}</span>
-                  </div>
-                )}
               </div>
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <Button

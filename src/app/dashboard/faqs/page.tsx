@@ -41,6 +41,24 @@ export default function FAQsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const defaultFaqs = [
+    {
+      question: 'What types of products do you sell?',
+      answer: 'We supply uniforms, safety signboards, engine oils, dispensing cans, mats, PPE, fuel additives, and station accessories.',
+    },
+    {
+      question: 'Do you support bulk orders?',
+      answer: 'Yes. Bulk orders are available for station setup packs, uniforms, signboards, and repeat business purchases.',
+    },
+    {
+      question: 'Do you offer free delivery?',
+      answer: 'Orders above the configured free-delivery threshold qualify for free delivery where service is available.',
+    },
+    {
+      question: 'What is the return policy?',
+      answer: 'Eligible unused items can be returned within the configured return window. Custom items may be excluded.',
+    },
+  ];
 
   useEffect(() => {
     fetchFaqs();
@@ -103,6 +121,21 @@ export default function FAQsPage() {
     }
   };
 
+  const addStarterFaqs = async () => {
+    setIsSubmitting(true);
+    try {
+      await Promise.all(defaultFaqs.map((faq, index) =>
+        api.post('/admin/faqs', { ...faq, sort_order: index + 1 })
+      ));
+      toast.success('Starter FAQs added');
+      await fetchFaqs();
+    } catch (e: any) {
+      toast.error('Failed to add starter FAQs: ' + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
@@ -118,16 +151,23 @@ export default function FAQsPage() {
           <h1 className="text-3xl font-bold text-slate-900">FAQs</h1>
           <p className="text-slate-600 mt-2">Manage Frequently Asked Questions</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingFaq(null);
-            setIsFormOpen(true);
-          }}
-          className="gap-2 bg-amber-500 hover:bg-amber-600"
-        >
-          <Plus className="w-4 h-4" />
-          New FAQ
-        </Button>
+        <div className="flex gap-2">
+          {faqs.length === 0 && (
+            <Button variant="outline" onClick={addStarterFaqs} disabled={isSubmitting}>
+              Add Starter FAQs
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setEditingFaq(null);
+              setIsFormOpen(true);
+            }}
+            className="gap-2 bg-amber-500 hover:bg-amber-600"
+          >
+            <Plus className="w-4 h-4" />
+            New FAQ
+          </Button>
+        </div>
       </div>
 
       <Card>

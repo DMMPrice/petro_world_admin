@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { Product, Order, Customer, Coupon, Banner } from './mock-data';
 import { api } from './supabase';
 import { toast } from 'sonner';
+import { useAuth } from './auth-context';
 
 interface DataContextType {
   // Products
@@ -14,7 +15,15 @@ interface DataContextType {
 
   // Categories
   categories: { id: string; title: string }[];
+  addCategory: (title: string) => Promise<boolean>;
+  updateCategory: (id: string, title: string) => Promise<boolean>;
+  deleteCategory: (id: string) => Promise<void>;
+
+  // Sub-categories
   subCategories: { id: string; name: string; category_id: string }[];
+  addSubCategory: (title: string, category_id: string) => Promise<boolean>;
+  updateSubCategory: (id: string, title: string, category_id: string) => Promise<boolean>;
+  deleteSubCategory: (id: string) => Promise<void>;
 
   // Orders
   orders: Order[];
@@ -60,6 +69,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -129,27 +139,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return acc;
       }, {});
 
-      setProducts((productsData as any[]).map((p: any) => ({
-        id: p.id,
-        name: p.title,
-        category: categoryMap[p.category_id] || 'Uncategorized',
-        category_id: p.category_id,
-        sub_category_id: p.sub_category_id,
-        sub_category_name: subCategoryMap[p.sub_category_id] || '',
-        price: Number(p.price),
-        stock: p.stock_quantity,
-        image: p.image_url || (p.images && p.images[0]),
-        gallery: p.gallery_urls || p.images || [],
-        description: p.description,
-        discount_type: p.discount_type,
-        discount_value: Number(p.discount_value),
-        price_after_discount: Number(p.price_after_discount),
-        discount_percent: p.discount_percent,
-        weight: p.weight,
-        length: p.length,
-        width: p.width,
-        height: p.height,
-      })));
+      setProducts((productsData as any[]).map((p: any) => {
+        const gallery = Array.from(
+          new Set(
+            [
+              p.image_url,
+              ...(Array.isArray(p.gallery_urls) ? p.gallery_urls : []),
+              ...(Array.isArray(p.images) ? p.images : []),
+            ].filter(Boolean)
+          )
+        ) as string[];
+
+        return {
+          id: p.id,
+          name: p.title,
+          category: categoryMap[p.category_id] || 'Uncategorized',
+          category_id: p.category_id,
+          sub_category_id: p.sub_category_id,
+          sub_category_name: subCategoryMap[p.sub_category_id] || '',
+          price: Number(p.price),
+          stock: p.stock_quantity,
+          image: gallery[0],
+          gallery,
+          description: p.description,
+          discount_type: p.discount_type,
+          discount_value: Number(p.discount_value),
+          price_after_discount: Number(p.price_after_discount),
+          discount_percent: p.discount_percent,
+          weight: p.weight,
+          length: p.length,
+          width: p.width,
+          height: p.height,
+        };
+      }));
 
       setOrders((ordersData as any[]).map((o: any) => ({
         id: o.id,
@@ -215,7 +237,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         id: b.id,
         imageUrl: b.image_url,
         title: b.title,
-        linkTo: b.link || b.link_to,
         active: b.active,
       })));
 
@@ -244,8 +265,78 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [fetchData]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user) fetchData();
+  }, [fetchData, user?.id]);
+
+  // ── Categories ────────────────────────────────────────────────────────────
+  const addCategory = async (title: string): Promise<boolean> => {
+    try {
+      await api.post('/admin/categories', { title });
+      toast.success('Category created');
+      await fetchData(true);
+      return true;
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create category');
+      return false;
+    }
+  };
+
+  const updateCategory = async (id: string, title: string): Promise<boolean> => {
+    try {
+      await api.patch(`/admin/categories/${id}`, { title });
+      toast.success('Category updated');
+      await fetchData(true);
+      return true;
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update category');
+      return false;
+    }
+  };
+
+  const deleteCategory = async (id: string): Promise<void> => {
+    try {
+      await api.delete(`/admin/categories/${id}`);
+      toast.success('Category deleted');
+      await fetchData(true);
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete category');
+    }
+  };
+
+  // ── Sub-categories ────────────────────────────────────────────────────────
+  const addSubCategory = async (title: string, category_id: string): Promise<boolean> => {
+    try {
+      await api.post('/admin/sub-categories', { title, category_id });
+      toast.success('Subcategory created');
+      await fetchData(true);
+      return true;
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create subcategory');
+      return false;
+    }
+  };
+
+  const updateSubCategory = async (id: string, title: string, category_id: string): Promise<boolean> => {
+    try {
+      await api.patch(`/admin/sub-categories/${id}`, { title, category_id });
+      toast.success('Subcategory updated');
+      await fetchData(true);
+      return true;
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update subcategory');
+      return false;
+    }
+  };
+
+  const deleteSubCategory = async (id: string): Promise<void> => {
+    try {
+      await api.delete(`/admin/sub-categories/${id}`);
+      toast.success('Subcategory deleted');
+      await fetchData(true);
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete subcategory');
+    }
+  };
 
   // ── Products ──────────────────────────────────────────────────────────────
   const addProduct = async (product: Omit<Product, 'id'>): Promise<boolean> => {
@@ -500,7 +591,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       await api.post('/admin/banners', {
         image_url: banner.imageUrl,
         title: banner.title,
-        link: banner.linkTo,
         active: banner.active,
       });
       toast.success('Banner added');
@@ -517,7 +607,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       await api.patch(`/admin/banners/${id}`, {
         image_url: banner.imageUrl,
         title: banner.title,
-        link: banner.linkTo,
         active: banner.active,
       });
       toast.success('Banner updated');
@@ -618,7 +707,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updateDeliveryEstimate,
       deleteDeliveryEstimate,
       categories: categoriesList,
+      addCategory,
+      updateCategory,
+      deleteCategory,
       subCategories: subCategoriesList,
+      addSubCategory,
+      updateSubCategory,
+      deleteSubCategory,
       loading,
       refreshData,
     }}>

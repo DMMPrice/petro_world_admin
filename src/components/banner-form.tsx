@@ -22,7 +22,10 @@ import { Loader2, Upload } from 'lucide-react';
 
 const bannerSchema = z.object({
   title: z.string().optional(),
-  linkTo: z.string().optional(),
+  imageUrl: z.string().refine(
+    (value) => value.startsWith('data:image/') || /^https?:\/\//.test(value),
+    'Enter a valid image URL or upload an image'
+  ),
   active: z.boolean().default(true),
 });
 
@@ -36,7 +39,6 @@ interface BannerFormProps {
 export function BannerForm({ banner, onClose }: BannerFormProps) {
   const { addBanner, updateBanner } = useData();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(banner?.imageUrl || null);
 
   const {
@@ -49,7 +51,7 @@ export function BannerForm({ banner, onClose }: BannerFormProps) {
     resolver: zodResolver(bannerSchema),
     defaultValues: {
       title: banner?.title || '',
-      linkTo: banner?.linkTo || '',
+      imageUrl: banner?.imageUrl || '',
       active: banner?.active ?? true,
     },
   });
@@ -59,10 +61,11 @@ export function BannerForm({ banner, onClose }: BannerFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const nextImage = reader.result as string;
+        setImagePreview(nextImage);
+        setValue('imageUrl', nextImage, { shouldValidate: true });
       };
       reader.readAsDataURL(file);
     }
@@ -71,23 +74,11 @@ export function BannerForm({ banner, onClose }: BannerFormProps) {
   const onSubmit = async (data: BannerFormData) => {
     setIsSubmitting(true);
     try {
-      let imageUrl = banner?.imageUrl || '';
-
-      if (imageFile) {
-        // File upload is not supported via the REST API.
-        toast.error('File upload is not supported. Please provide an image URL directly.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!imageUrl) {
-        toast.error('Banner image URL is required');
-        setIsSubmitting(false);
-        return;
-      }
+      const imageUrl = data.imageUrl;
 
       const bannerData = {
-        ...data,
+        title: data.title,
+        active: data.active,
         imageUrl,
       };
 
@@ -170,12 +161,19 @@ export function BannerForm({ banner, onClose }: BannerFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="linkTo">Link To (Optional)</Label>
+            <Label htmlFor="imageUrl">Image URL</Label>
             <Input
-              id="linkTo"
-              placeholder="e.g., /category/fuel"
-              {...register('linkTo')}
+              id="imageUrl"
+              placeholder="https://example.com/banner.jpg or upload above"
+              {...register('imageUrl')}
+              onChange={(event) => {
+                register('imageUrl').onChange(event);
+                setImagePreview(event.target.value || null);
+              }}
             />
+            {errors.imageUrl && (
+              <p className="text-xs text-red-500">{errors.imageUrl.message}</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between py-2">
